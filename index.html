@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RACING SIMPLE - Jemboutysdg</title>
+    <title>RACING SIMPLE - Halow brow</title>
     <style>
         * {
             user-select: none;
@@ -29,7 +29,6 @@
             display: block;
             margin: 0 auto;
             border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0,255,255,0.5);
             background: #1a1a2a;
         }
         .info {
@@ -50,21 +49,19 @@
             justify-content: center;
             gap: 15px;
             margin-top: 15px;
-            flex-wrap: wrap;
         }
         button {
             background: linear-gradient(145deg, #1a1a2e, #0a0a1a);
             border: 1px solid cyan;
             color: cyan;
-            font-size: 20px;
+            font-size: 24px;
             font-weight: bold;
-            padding: 10px 20px;
-            border-radius: 40px;
+            padding: 10px 25px;
+            border-radius: 50px;
             cursor: pointer;
             font-family: monospace;
             box-shadow: 0 4px 0 #004466;
             transition: 0.03s linear;
-            min-width: 80px;
         }
         button:active {
             transform: translateY(3px);
@@ -77,8 +74,7 @@
             color: #888;
         }
         @media (max-width: 600px) {
-            button { padding: 8px 16px; font-size: 18px; min-width: 65px; }
-            .speed { font-size: 16px; }
+            button { padding: 8px 20px; font-size: 20px; }
         }
     </style>
 </head>
@@ -86,15 +82,13 @@
 <div>
     <div class="game-container">
         <div class="speed">🏁 SPEED: <span id="speedVal">0</span> KM/H 🏁</div>
-        <canvas id="gameCanvas" width="500" height="500"></canvas>
-        <div class="controls" id="touchControls">
+        <canvas id="gameCanvas" width="400" height="550"></canvas>
+        <div class="controls">
             <button id="leftBtn">◀ KIRI</button>
-            <button id="upBtn">▲ MAJU</button>
-            <button id="downBtn">▼ MUNDUR</button>
             <button id="rightBtn">KANAN ▶</button>
         </div>
-        <div class="key-hint">⌨️ LAPTOP: PANAH atau WASD | 📱 HP: TEKAN TOMBOL</div>
-        <div class="info">🚗 Hindari Mobil Merah! 🚗</div>
+        <div class="key-hint">⌨️ LAPTOP: ← → atau A D | 📱 HP: TEKAN TOMBOL</div>
+        <div class="info">🚗 Hindari Mobil Merah! Mobilmu maju otomatis 🚗</div>
     </div>
 </div>
 
@@ -103,104 +97,82 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
-        // Ukuran canvas
-        canvas.width = 500;
-        canvas.height = 500;
+        canvas.width = 400;
+        canvas.height = 550;
         
-        // Player
+        // PLAYER (mobil hijau)
         let playerX = canvas.width / 2 - 25;
-        let playerY = canvas.height - 80;
-        const playerWidth = 50;
-        const playerHeight = 50;
+        const playerWidth = 45;
+        const playerHeight = 55;
+        const playerY = canvas.height - 80;
         
-        // Musuh (mobil lawan)
+        // MUSUH
         let enemies = [];
         
-        // Skor & kecepatan
         let score = 0;
-        let speed = 3;
+        let baseSpeed = 4;
         let gameRunning = true;
         let frameCount = 0;
         
-        // Input flags
+        // Input (cuma kiri/kanan)
         let leftPressed = false;
         let rightPressed = false;
-        let upPressed = false;
-        let downPressed = false;
         
-        // Warna musuh
-        const enemyColors = ['#ff4444', '#ff6666', '#cc3333', '#ff5555', '#ff2222'];
-        
-        // Buat musuh baru
+        // Spawn musuh
         function spawnEnemy() {
-            const x = Math.random() * (canvas.width - 40);
+            const x = 20 + Math.random() * (canvas.width - 60);
             enemies.push({
                 x: x,
-                y: -50,
+                y: -60,
                 width: 40,
                 height: 50,
-                color: enemyColors[Math.floor(Math.random() * enemyColors.length)]
+                color: '#ff4444'
             });
         }
         
-        // Spawn awal
-        for(let i = 0; i < 4; i++) {
+        // Musuh awal (dikit biar ga rame)
+        for(let i = 0; i < 3; i++) {
             spawnEnemy();
-            enemies[i].y = -100 - i * 80;
+            enemies[i].y = -100 - i * 120;
         }
         
-        // Update game
         function updateGame() {
             if(!gameRunning) return;
             
-            // Gerak maju mundur
-            if(upPressed) {
-                speed += 0.2;
-                if(speed > 12) speed = 12;
-            }
-            if(downPressed) {
-                speed -= 0.3;
-                if(speed < 1) speed = 1;
-            }
+            // Kecepatan nambah dikit setiap saat
+            baseSpeed += 0.003;
+            if(baseSpeed > 9) baseSpeed = 9;
             
-            // Natural friction
-            if(!upPressed && !downPressed) {
-                speed *= 0.99;
-                if(speed < 2) speed = 2;
-            }
+            let displaySpeed = Math.floor(baseSpeed * 12);
+            document.getElementById('speedVal').innerText = displaySpeed;
             
-            // Gerak kiri kanan
-            if(leftPressed && playerX > 5) {
+            // Gerak kiri kanan player
+            if(leftPressed && playerX > 10) {
                 playerX -= 6;
             }
-            if(rightPressed && playerX < canvas.width - playerWidth - 5) {
+            if(rightPressed && playerX < canvas.width - playerWidth - 10) {
                 playerX += 6;
             }
             
-            // Update speedometer
-            let displaySpeed = Math.floor(speed * 8);
-            document.getElementById('speedVal').innerText = displaySpeed;
-            
-            // Update posisi musuh
+            // Update posisi musuh (turun)
             for(let i = 0; i < enemies.length; i++) {
-                enemies[i].y += speed;
+                enemies[i].y += baseSpeed;
                 
-                // Spawn ulang kalo keluar layar
                 if(enemies[i].y > canvas.height) {
-                    enemies[i].y = -50;
-                    enemies[i].x = Math.random() * (canvas.width - 40);
-                    score += 10;
+                    enemies[i].y = -60;
+                    enemies[i].x = 20 + Math.random() * (canvas.width - 60);
+                    score++;
                 }
             }
             
-            // Spawn musuh baru setiap frame tertentu
+            // Spawn musuh baru pelan-pelan
             frameCount++;
-            if(frameCount > 40 && enemies.length < 8) {
+            if(frameCount > 70 && enemies.length < 5) {
                 spawnEnemy();
                 frameCount = 0;
             }
             
-            // COLLISION DETECTION
+            // COLLISION
             for(let i = 0; i < enemies.length; i++) {
                 const e = enemies[i];
                 if(playerX < e.x + e.width &&
@@ -208,7 +180,7 @@
                    playerY < e.y + e.height &&
                    playerY + playerHeight > e.y) {
                     gameRunning = false;
-                    alert('💥 GAME OVER! 💥\nSkor: ' + score + '\nTekan OK untuk restart');
+                    alert('💥 GAME OVER! 💥\nSkor: ' + score);
                     restartGame();
                     return;
                 }
@@ -218,125 +190,113 @@
         function restartGame() {
             gameRunning = true;
             score = 0;
-            speed = 3;
-            playerX = canvas.width / 2 - 25;
+            baseSpeed = 4;
+            playerX = canvas.width / 2 - 22;
             enemies = [];
-            for(let i = 0; i < 4; i++) {
+            for(let i = 0; i < 3; i++) {
                 spawnEnemy();
-                enemies[i].y = -100 - i * 80;
+                enemies[i].y = -100 - i * 120;
             }
             document.getElementById('speedVal').innerText = '0';
         }
         
-        // DRAW SEMUA
         function draw() {
-            // Background jalan
+            // Background
             ctx.fillStyle = '#1a1a2a';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Garis jalan
+            // Garis tengah putus-putus
+            ctx.beginPath();
+            ctx.setLineDash([15, 25]);
             ctx.strokeStyle = '#ffff00';
             ctx.lineWidth = 3;
-            ctx.setLineDash([20, 30]);
-            for(let i = 0; i < 10; i++) {
+            for(let i = 0; i < 15; i++) {
                 ctx.beginPath();
-                ctx.moveTo(canvas.width/2, i * 50);
-                ctx.lineTo(canvas.width/2, i * 50 + 30);
+                ctx.moveTo(canvas.width/2, i * 45);
+                ctx.lineTo(canvas.width/2, i * 45 + 25);
                 ctx.stroke();
             }
             ctx.setLineDash([]);
             
-            // Garis pinggir
-            ctx.strokeStyle = '#ffffff';
+            // Pinggir jalan
+            ctx.strokeStyle = '#ffffff88';
             ctx.lineWidth = 2;
-            ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+            ctx.strokeRect(8, 8, canvas.width - 16, canvas.height - 16);
             
-            // Gambar musuh
+            // GAMBAR MUSUH (mobil merah)
             for(let e of enemies) {
-                // Body mobil musuh
                 ctx.fillStyle = e.color;
-                ctx.shadowBlur = 8;
+                ctx.shadowBlur = 6;
                 ctx.shadowColor = 'red';
                 ctx.fillRect(e.x, e.y, e.width, e.height);
                 
                 // Kaca
                 ctx.fillStyle = '#333366';
-                ctx.fillRect(e.x + 8, e.y + 8, e.width - 16, 15);
+                ctx.fillRect(e.x + 8, e.y + 8, e.width - 16, 12);
                 
                 // Lampu
-                ctx.fillStyle = '#ffff00';
-                ctx.fillRect(e.x + 5, e.y + e.height - 10, 8, 6);
-                ctx.fillRect(e.x + e.width - 13, e.y + e.height - 10, 8, 6);
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(e.x + 5, e.y + 2, 6, 6);
-                ctx.fillRect(e.x + e.width - 11, e.y + 2, 6, 6);
+                ctx.fillStyle = '#ffaa00';
+                ctx.fillRect(e.x + 5, e.y + e.height - 8, 7, 5);
+                ctx.fillRect(e.x + e.width - 12, e.y + e.height - 8, 7, 5);
                 
                 // Roda
                 ctx.fillStyle = '#222';
-                ctx.fillRect(e.x + 5, e.y + e.height - 12, 8, 8);
-                ctx.fillRect(e.x + e.width - 13, e.y + e.height - 12, 8, 8);
-                ctx.fillRect(e.x + 5, e.y + 2, 8, 8);
-                ctx.fillRect(e.x + e.width - 13, e.y + 2, 8, 8);
+                ctx.fillRect(e.x + 5, e.y + e.height - 10, 7, 7);
+                ctx.fillRect(e.x + e.width - 12, e.y + e.height - 10, 7, 7);
+                ctx.fillRect(e.x + 5, e.y + 3, 7, 7);
+                ctx.fillRect(e.x + e.width - 12, e.y + 3, 7, 7);
             }
             
-            // Gambar PLAYER (mobil hijau)
-            ctx.shadowBlur = 12;
+            // GAMBAR PLAYER (mobil hijau)
+            ctx.shadowBlur = 10;
             ctx.shadowColor = '#0ff';
             ctx.fillStyle = '#33ff88';
             ctx.fillRect(playerX, playerY, playerWidth, playerHeight);
             
-            // Kaca mobil player
+            // Kaca
             ctx.fillStyle = '#88ccff';
-            ctx.fillRect(playerX + 10, playerY + 8, playerWidth - 20, 15);
+            ctx.fillRect(playerX + 10, playerY + 8, playerWidth - 20, 12);
             
-            // Lampu player
+            // Lampu
             ctx.fillStyle = '#ffaa44';
-            ctx.fillRect(playerX + 5, playerY + playerHeight - 10, 8, 6);
-            ctx.fillRect(playerX + playerWidth - 13, playerY + playerHeight - 10, 8, 6);
+            ctx.fillRect(playerX + 5, playerY + playerHeight - 8, 7, 5);
+            ctx.fillRect(playerX + playerWidth - 12, playerY + playerHeight - 8, 7, 5);
             ctx.fillStyle = '#ffffff';
-            ctx.fillRect(playerX + 5, playerY + 2, 6, 6);
-            ctx.fillRect(playerX + playerWidth - 11, playerY + 2, 6, 6);
+            ctx.fillRect(playerX + 5, playerY + 3, 6, 6);
+            ctx.fillRect(playerX + playerWidth - 11, playerY + 3, 6, 6);
             
-            // Roda player
+            // Roda
             ctx.fillStyle = '#111';
-            ctx.fillRect(playerX + 5, playerY + playerHeight - 12, 8, 8);
-            ctx.fillRect(playerX + playerWidth - 13, playerY + playerHeight - 12, 8, 8);
-            ctx.fillRect(playerX + 5, playerY + 2, 8, 8);
-            ctx.fillRect(playerX + playerWidth - 13, playerY + 2, 8, 8);
+            ctx.fillRect(playerX + 5, playerY + playerHeight - 10, 7, 7);
+            ctx.fillRect(playerX + playerWidth - 12, playerY + playerHeight - 10, 7, 7);
+            ctx.fillRect(playerX + 5, playerY + 3, 7, 7);
+            ctx.fillRect(playerX + playerWidth - 12, playerY + 3, 7, 7);
             
             ctx.shadowBlur = 0;
             
             // Skor
             ctx.font = "bold 18px monospace";
             ctx.fillStyle = "#0ff";
-            ctx.shadowBlur = 0;
             ctx.fillText("SCORE: " + score, 15, 35);
         }
         
-        // ============ INPUT HANDLER ============
+        // ============ INPUT ============
         // Keyboard
         window.addEventListener('keydown', (e) => {
             const key = e.key;
             if(key === 'ArrowLeft' || key === 'a' || key === 'A') leftPressed = true;
             if(key === 'ArrowRight' || key === 'd' || key === 'D') rightPressed = true;
-            if(key === 'ArrowUp' || key === 'w' || key === 'W') upPressed = true;
-            if(key === 'ArrowDown' || key === 's' || key === 'S') downPressed = true;
             e.preventDefault();
         });
-        
         window.addEventListener('keyup', (e) => {
             const key = e.key;
             if(key === 'ArrowLeft' || key === 'a' || key === 'A') leftPressed = false;
             if(key === 'ArrowRight' || key === 'd' || key === 'D') rightPressed = false;
-            if(key === 'ArrowUp' || key === 'w' || key === 'W') upPressed = false;
-            if(key === 'ArrowDown' || key === 's' || key === 'S') downPressed = false;
         });
         
-        // Tombol touch (HP)
+        // Tombol touch
         const leftBtn = document.getElementById('leftBtn');
         const rightBtn = document.getElementById('rightBtn');
-        const upBtn = document.getElementById('upBtn');
-        const downBtn = document.getElementById('downBtn');
         
         leftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); leftPressed = true; });
         leftBtn.addEventListener('touchend', () => { leftPressed = false; });
@@ -348,17 +308,7 @@
         rightBtn.addEventListener('mousedown', () => { rightPressed = true; });
         rightBtn.addEventListener('mouseup', () => { rightPressed = false; });
         
-        upBtn.addEventListener('touchstart', (e) => { e.preventDefault(); upPressed = true; });
-        upBtn.addEventListener('touchend', () => { upPressed = false; });
-        upBtn.addEventListener('mousedown', () => { upPressed = true; });
-        upBtn.addEventListener('mouseup', () => { upPressed = false; });
-        
-        downBtn.addEventListener('touchstart', (e) => { e.preventDefault(); downPressed = true; });
-        downBtn.addEventListener('touchend', () => { downPressed = false; });
-        downBtn.addEventListener('mousedown', () => { downPressed = true; });
-        downBtn.addEventListener('mouseup', () => { downPressed = false; });
-        
-        // Animasi loop
+        // LOOP
         function gameLoop() {
             updateGame();
             draw();
