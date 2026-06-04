@@ -2,445 +2,170 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RACING - Inorya</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade Hub | Inorya</title>
     <style>
         * {
-            user-select: none;
-            touch-action: manipulation;
-        }
-        body {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
             min-height: 100vh;
-            background: linear-gradient(180deg, #0a0f1e 0%, #0f1a2e 100%);
+            background: linear-gradient(135deg, #0a0f1e 0%, #0e1a2a 100%);
+            font-family: 'Segoe UI', 'Courier New', monospace;
+            color: #fff;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-family: 'Courier New', monospace;
+            padding: 20px;
         }
-        .game-container {
-            background: #0a0a1a;
-            padding: 15px;
-            border-radius: 20px;
-            border: 2px solid #0ff;
-            box-shadow: 0 0 20px rgba(0,255,255,0.3);
+
+        /* Efek kaca (glassmorphism) */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            border-radius: 2rem;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
         }
-        canvas {
-            display: block;
-            margin: 0 auto;
-            border-radius: 10px;
-            background: #151525;
-            box-shadow: 0 0 10px rgba(0,255,255,0.3);
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            padding: 2rem;
         }
-        .info {
+
+        /* Header */
+        .hero {
             text-align: center;
-            margin-top: 10px;
-            color: #0ff;
-            font-size: 13px;
+            margin-bottom: 4rem;
         }
-        .speed-panel {
+
+        .hero h1 {
+            font-size: 3.5rem;
+            background: linear-gradient(135deg, #00ffcc, #0099ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 20px rgba(0,255,255,0.3);
+            letter-spacing: 2px;
+        }
+
+        .hero p {
+            color: #aaa;
+            margin-top: 1rem;
+            font-size: 1.1rem;
+        }
+
+        /* Grid untuk game cards */
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .game-card {
+            background: rgba(10, 20, 30, 0.7);
+            backdrop-filter: blur(8px);
+            border-radius: 1.5rem;
+            padding: 1.8rem;
             text-align: center;
-            color: #ff0;
-            font-size: 22px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            background: #00000066;
-            padding: 5px;
-            border-radius: 30px;
-        }
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 15px;
-        }
-        button {
-            background: linear-gradient(145deg, #1a1a2e, #0a0a1a);
-            border: 1px solid #0ff;
-            color: #0ff;
-            font-size: 24px;
-            font-weight: bold;
-            padding: 10px 28px;
-            border-radius: 50px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0, 255, 255, 0.2);
             cursor: pointer;
+        }
+
+        .game-card:hover {
+            transform: translateY(-10px);
+            border-color: cyan;
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.4);
+            background: rgba(10, 30, 45, 0.8);
+        }
+
+        .game-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .game-card h2 {
+            font-size: 1.8rem;
+            margin-bottom: 0.8rem;
+            color: #0ff;
+        }
+
+        .game-card p {
+            color: #ccc;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .play-btn {
+            background: linear-gradient(90deg, #00aaff, #00ffcc);
+            border: none;
+            padding: 10px 25px;
+            border-radius: 40px;
+            color: #0a0f1e;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
             font-family: monospace;
-            box-shadow: 0 4px 0 #004466;
-            transition: 0.03s linear;
         }
-        button:active {
-            transform: translateY(3px);
-            box-shadow: 0 1px 0 #004466;
+
+        .play-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px cyan;
         }
-        .key-hint {
+
+        footer {
             text-align: center;
-            margin-top: 10px;
-            font-size: 10px;
-            color: #888;
+            margin-top: 4rem;
+            color: #555;
+            font-size: 0.8rem;
         }
-        @media (max-width: 550px) {
-            button { padding: 8px 22px; font-size: 20px; }
-            .speed-panel { font-size: 18px; }
+
+        @media (max-width: 700px) {
+            .hero h1 { font-size: 2.2rem; }
+            .game-grid { gap: 1rem; }
         }
     </style>
 </head>
 <body>
-<div>
-    <div class="game-container">
-        <div class="speed-panel">⚡ SPEED: <span id="speedVal">0</span> KM/H ⚡</div>
-        <canvas id="gameCanvas" width="400" height="550"></canvas>
-        <div class="controls">
-            <button id="leftBtn">◀ KIRI</button>
-            <button id="rightBtn">KANAN ▶</button>
+    <div class="container">
+        <div class="hero glass-card" style="padding: 2rem;">
+            <h1>🎮 ARCADE HUB 🎮</h1>
+            <p>Pilih game favoritmu | Progress tersimpan otomatis</p>
         </div>
-        <div class="key-hint">⌨️ ← → atau A D | 📱 TEKAN TOMBOL</div>
-        <div class="info">🚗 Hindari mobil lain! 🚗</div>
-    </div>
-</div>
 
-<script>
-    (function() {
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        
-        canvas.width = 400;
-        canvas.height = 550;
-        
-        // ============ PLAYER ============
-        let playerX = canvas.width / 2 - 23;
-        const playerWidth = 46;
-        const playerHeight = 56;
-        const playerY = canvas.height - 80;
-        
-        // ============ MUSUH ============
-        let enemies = [];
-        let score = 0;
-        let baseSpeed = 3.8;
-        let gameRunning = true;
-        let spawnDelay = 0;
-        
-        // Warna musuh (beda-beda)
-        const enemyColors = [
-            '#e74c3c', // merah
-            '#3498db', // biru
-            '#9b59b6', // ungu
-            '#e67e22', // jingga
-            '#f1c40f', // kuning
-            '#2ecc71', // hijau
-            '#e91e63'  // pink
-        ];
-        
-        // ============ CEK APAKAH MOBIL BISA SPAWN (GAK BENTUR SAMA YANG LAIN) ============
-        function canSpawnAt(x, y) {
-            for(let e of enemies) {
-                if(Math.abs(e.x - x) < 42 && Math.abs(e.y - y) < 55) {
-                    return false;
-                }
-                // juga cek jarak vertikal terlalu dekat
-                if(Math.abs(e.y - y) < 70 && Math.abs(e.x - x) < 45) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        
-        // ============ SPAWN MUSUH ============
-        function spawnEnemy() {
-            if(!gameRunning) return;
-            
-            let attempts = 0;
-            let spawned = false;
-            
-            while(attempts < 15 && !spawned) {
-                const randX = 12 + Math.random() * (canvas.width - 52);
-                const randY = -60 - Math.random() * 80;
-                
-                if(canSpawnAt(randX, randY)) {
-                    enemies.push({
-                        x: randX,
-                        y: randY,
-                        width: 42,
-                        height: 52,
-                        color: enemyColors[Math.floor(Math.random() * enemyColors.length)]
-                    });
-                    spawned = true;
-                }
-                attempts++;
-            }
-            
-            // kalo gagal spawn, paksa spawn di pojok
-            if(!spawned) {
-                enemies.push({
-                    x: 15 + Math.random() * (canvas.width - 57),
-                    y: -60,
-                    width: 42,
-                    height: 52,
-                    color: enemyColors[Math.floor(Math.random() * enemyColors.length)]
-                });
-            }
-        }
-        
-        // ============ MUSUH AWAL (2 aja biar ga rame) ============
-        for(let i = 0; i < 2; i++) {
-            spawnEnemy();
-            if(enemies[i]) enemies[i].y = -100 - i * 150;
-        }
-        
-        // ============ UPDATE ============
-        function updateGame() {
-            if(!gameRunning) return;
-            
-            // Kecepatan makin lama makin cepet
-            baseSpeed += 0.0025;
-            if(baseSpeed > 8.5) baseSpeed = 8.5;
-            
-            let displaySpeed = Math.floor(baseSpeed * 11);
-            document.getElementById('speedVal').innerText = displaySpeed;
-            
-            // Gerak player (kiri/kanan)
-            if(leftPressed && playerX > 8) playerX -= 5.5;
-            if(rightPressed && playerX < canvas.width - playerWidth - 8) playerX += 5.5;
-            
-            // Update posisi musuh & collision antar musuh (biar ga numpuk)
-            for(let i = 0; i < enemies.length; i++) {
-                enemies[i].y += baseSpeed;
-                
-                // Cek collision antar musuh (biar ga gabung)
-                for(let j = i + 1; j < enemies.length; j++) {
-                    const a = enemies[i];
-                    const b = enemies[j];
-                    if(Math.abs(a.x - b.x) < 44 && Math.abs(a.y - b.y) < 56) {
-                        // dorong salah satu
-                        if(a.y < b.y) {
-                            a.y -= 3;
-                            b.y += 3;
-                        } else {
-                            a.y += 3;
-                            b.y -= 3;
-                        }
-                        // batasin ga keluar layar atas
-                        if(a.y < -60) a.y = -60;
-                        if(b.y < -60) b.y = -60;
-                    }
-                }
-                
-                // Hapus kalo keluar bawah, spawn baru di atas
-                if(enemies[i].y > canvas.height + 60) {
-                    enemies.splice(i,1);
-                    i--;
-                    score++;
-                    spawnEnemy();
-                }
-            }
-            
-            // Spawn musuh baru kalo kurang dari 3
-            if(enemies.length < 3 && gameRunning) {
-                spawnDelay++;
-                if(spawnDelay > 25) {
-                    spawnEnemy();
-                    spawnDelay = 0;
-                }
-            } else {
-                spawnDelay = 0;
-            }
-            
-            // ============ COLLISION PLAYER VS MUSUH ============
-            for(let i = 0; i < enemies.length; i++) {
-                const e = enemies[i];
-                if(playerX < e.x + e.width &&
-                   playerX + playerWidth > e.x &&
-                   playerY < e.y + e.height &&
-                   playerY + playerHeight > e.y) {
-                    gameRunning = false;
-                    alert('💥 GAME OVER! 💥\nSkor: ' + score);
-                    restartGame();
-                    return;
-                }
-            }
-        }
-        
-        function restartGame() {
-            gameRunning = true;
-            score = 0;
-            baseSpeed = 3.8;
-            playerX = canvas.width / 2 - 23;
-            enemies = [];
-            for(let i = 0; i < 2; i++) {
-                spawnEnemy();
-                if(enemies[i]) enemies[i].y = -100 - i * 150;
-            }
-            document.getElementById('speedVal').innerText = '0';
-            spawnDelay = 0;
-        }
-        
-        // ============ GAMBAR MOBIL (LENGKAP) ============
-        function drawCar(x, y, w, h, color, isPlayer) {
-            // Body utama
-            ctx.fillStyle = color;
-            ctx.shadowBlur = isPlayer ? 10 : 5;
-            ctx.shadowColor = isPlayer ? '#0ff' : '#f00';
-            ctx.beginPath();
-            ctx.roundRect(x, y, w, h, 10);
-            ctx.fill();
-            
-            // Kaca depan
-            ctx.fillStyle = isPlayer ? '#88ddff' : '#335588';
-            ctx.beginPath();
-            ctx.roundRect(x + 8, y + 8, w - 16, 14, 5);
-            ctx.fill();
-            
-            // Kaca belakang
-            ctx.fillStyle = isPlayer ? '#88aaff' : '#224466';
-            ctx.beginPath();
-            ctx.roundRect(x + 10, y + h - 22, w - 20, 12, 4);
-            ctx.fill();
-            
-            // Lampu depan (kuning)
-            ctx.fillStyle = '#ffcc44';
-            ctx.fillRect(x + 5, y + 3, 7, 6);
-            ctx.fillRect(x + w - 12, y + 3, 7, 6);
-            
-            // Lampu belakang (merah)
-            ctx.fillStyle = '#ff4422';
-            ctx.fillRect(x + 5, y + h - 10, 7, 6);
-            ctx.fillRect(x + w - 12, y + h - 10, 7, 6);
-            
-            // Roda
-            ctx.fillStyle = '#1a1a1a';
-            ctx.fillRect(x + 5, y + h - 12, 8, 8);
-            ctx.fillRect(x + w - 13, y + h - 12, 8, 8);
-            ctx.fillRect(x + 5, y + 3, 8, 8);
-            ctx.fillRect(x + w - 13, y + 3, 8, 8);
-            
-            // Velg roda (sedikit aksen)
-            ctx.fillStyle = '#555';
-            ctx.fillRect(x + 7, y + h - 10, 4, 4);
-            ctx.fillRect(x + w - 11, y + h - 10, 4, 4);
-            ctx.fillRect(x + 7, y + 5, 4, 4);
-            ctx.fillRect(x + w - 11, y + 5, 4, 4);
-            
-            // Kaca spion (cuma player)
-            if(isPlayer) {
-                ctx.fillStyle = '#aaa';
-                ctx.fillRect(x - 4, y + 15, 4, 6);
-                ctx.fillRect(x + w, y + 15, 4, 6);
-            }
-        }
-        
-        // Helper roundRect
-        if (!CanvasRenderingContext2D.prototype.roundRect) {
-            CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
-                if (w < 2 * r) r = w / 2;
-                if (h < 2 * r) r = h / 2;
-                this.moveTo(x+r, y);
-                this.lineTo(x+w-r, y);
-                this.quadraticCurveTo(x+w, y, x+w, y+r);
-                this.lineTo(x+w, y+h-r);
-                this.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
-                this.lineTo(x+r, y+h);
-                this.quadraticCurveTo(x, y+h, x, y+h-r);
-                this.lineTo(x, y+r);
-                this.quadraticCurveTo(x, y, x+r, y);
-                return this;
-            };
-        }
-        
-        // ============ DRAW SEMUA ============
-        function draw() {
-            // Background aspal
-            ctx.fillStyle = '#151525';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Garis tengah putus-putus (efek gerak)
-            ctx.beginPath();
-            ctx.setLineDash([15, 28]);
-            ctx.strokeStyle = '#ffff88';
-            ctx.lineWidth = 3;
-            for(let i = 0; i < 18; i++) {
-                ctx.beginPath();
-                ctx.moveTo(canvas.width/2, (i * 40 + Date.now() * 0.003 * baseSpeed) % 550);
-                ctx.lineTo(canvas.width/2, (i * 40 + Date.now() * 0.003 * baseSpeed + 25) % 550);
-                ctx.stroke();
-            }
-            ctx.setLineDash([]);
-            
-            // Garis pinggir jalan
-            ctx.strokeStyle = '#55aaff';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(6, 6, canvas.width - 12, canvas.height - 12);
-            
-            // Garis pembatas jalur
-            ctx.strokeStyle = '#3388aa';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.moveTo(canvas.width/2 - 60, 0);
-            ctx.lineTo(canvas.width/2 - 60, canvas.height);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(canvas.width/2 + 60, 0);
-            ctx.lineTo(canvas.width/2 + 60, canvas.height);
-            ctx.stroke();
-            
-            // Gambar musuh
-            for(let e of enemies) {
-                drawCar(e.x, e.y, e.width, e.height, e.color, false);
-            }
-            
-            // Gambar player
-            drawCar(playerX, playerY, playerWidth, playerHeight, '#3eff9e', true);
-            
-            // Skor
-            ctx.font = "bold 18px 'Courier New'";
-            ctx.fillStyle = "#0ff";
-            ctx.shadowBlur = 0;
-            ctx.fillText("🏆 " + score, 15, 35);
-            
-            // Peringatan kecepatan
-            if(baseSpeed > 7) {
-                ctx.font = "bold 12px monospace";
-                ctx.fillStyle = "#ff6666";
-                ctx.fillText("⚠️ HIGH SPEED ⚠️", canvas.width/2 - 55, 25);
-            }
-        }
-        
-        // ============ INPUT ============
-        let leftPressed = false;
-        let rightPressed = false;
-        
-        window.addEventListener('keydown', (e) => {
-            const key = e.key;
-            if(key === 'ArrowLeft' || key === 'a' || key === 'A') leftPressed = true;
-            if(key === 'ArrowRight' || key === 'd' || key === 'D') rightPressed = true;
-            e.preventDefault();
-        });
-        window.addEventListener('keyup', (e) => {
-            const key = e.key;
-            if(key === 'ArrowLeft' || key === 'a' || key === 'A') leftPressed = false;
-            if(key === 'ArrowRight' || key === 'd' || key === 'D') rightPressed = false;
-        });
-        
-        // Tombol touch
-        const leftBtn = document.getElementById('leftBtn');
-        const rightBtn = document.getElementById('rightBtn');
-        
-        leftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); leftPressed = true; });
-        leftBtn.addEventListener('touchend', () => { leftPressed = false; });
-        leftBtn.addEventListener('mousedown', () => { leftPressed = true; });
-        leftBtn.addEventListener('mouseup', () => { leftPressed = false; });
-        
-        rightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); rightPressed = true; });
-        rightBtn.addEventListener('touchend', () => { rightPressed = false; });
-        rightBtn.addEventListener('mousedown', () => { rightPressed = true; });
-        rightBtn.addEventListener('mouseup', () => { rightPressed = false; });
-        
-        // LOOP
-        function gameLoop() {
-            updateGame();
-            draw();
-            requestAnimationFrame(gameLoop);
-        }
-        
-        gameLoop();
-    })();
-</script>
+        <div class="game-grid">
+            <!-- Game Racing -->
+            <div class="game-card" id="racingCard">
+                <div class="game-icon">🏎️💨</div>
+                <h2>HIGHWAY RACER</h2>
+                <p>Hindari mobil lawan, kejar kecepatan tertinggi! Kontrol dengan panah kiri/kanan.</p>
+                <button class="play-btn" onclick="location.href='racing/index.html'">🎮 MAIN SEKARANG</button>
+            </div>
+
+            <!-- Game Survival + Perang -->
+            <div class="game-card" id="survivalCard">
+                <div class="game-icon">🔫🧟</div>
+                <h2>LAST STAND: SURVIVAL</h2>
+                <p>Game perang + survival. Gerak WASD, tembak pake mouse. Jaga haus, lapar, dan amunisi!</p>
+                <button class="play-btn" onclick="location.href='survival/index.html'">🔥 MULAI BERTAHAN</button>
+            </div>
+        </div>
+
+        <footer>
+            ⚡ Inorya Arcade | Progress disimpan otomatis di browser mu ⚡
+        </footer>
+    </div>
+
+    <script>
+        // Efek animasi sederhana di homepage
+        console.log("%c🏁 ARCADE HUB SIAP! 🏁", "color: cyan; font-size: 16px");
+    </script>
 </body>
 </html>
