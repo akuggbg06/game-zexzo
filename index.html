@@ -2,8 +2,8 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>3D RACING LITE - Inorya</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>RACING SIMPLE - Jemboutysdg</title>
     <style>
         * {
             user-select: none;
@@ -11,503 +11,362 @@
         }
         body {
             margin: 0;
-            overflow: hidden;
+            min-height: 100vh;
+            background: linear-gradient(180deg, #0a0f1e 0%, #1a1a2e 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
             font-family: 'Courier New', monospace;
-            background: #0a0f1e;
+        }
+        .game-container {
+            background: #0a0a1a;
+            padding: 15px;
+            border-radius: 20px;
+            border: 2px solid cyan;
+            box-shadow: 0 0 20px rgba(0,255,255,0.3);
         }
         canvas {
             display: block;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            cursor: grab;
+            margin: 0 auto;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,255,255,0.5);
+            background: #1a1a2a;
         }
-        canvas:active {
-            cursor: grabbing;
-        }
-        #speedometer {
-            position: absolute;
-            bottom: 140px;
-            right: 15px;
-            background: rgba(0,0,0,0.85);
-            color: #0ff;
-            padding: 12px 20px;
-            border-radius: 50%;
-            font-size: 26px;
-            font-weight: bold;
-            font-family: monospace;
-            z-index: 10;
-            border: 2px solid cyan;
+        .info {
             text-align: center;
-            backdrop-filter: blur(5px);
-            pointer-events: none;
+            margin-top: 10px;
+            color: cyan;
+            font-size: 14px;
         }
-        #speedometer small {
-            font-size: 10px;
-            display: block;
+        .speed {
+            text-align: center;
+            color: yellow;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
         }
-        .key-hint {
-            position: absolute;
-            bottom: 15px;
-            left: 15px;
-            background: rgba(0,0,0,0.6);
-            padding: 5px 12px;
-            border-radius: 8px;
-            font-size: 10px;
-            color: #aaa;
-            z-index: 10;
-            font-family: monospace;
-            pointer-events: none;
-        }
-        .controls-panel {
-            position: fixed;
-            bottom: 15px;
-            left: 0;
-            right: 0;
-            display: none;
+        .controls {
+            display: flex;
             justify-content: center;
-            gap: 12px;
-            padding: 12px;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(10px);
-            z-index: 20;
-            border-top: 1px solid cyan;
+            gap: 15px;
+            margin-top: 15px;
+            flex-wrap: wrap;
         }
-        .ctrl-btn {
+        button {
             background: linear-gradient(145deg, #1a1a2e, #0a0a1a);
             border: 1px solid cyan;
             color: cyan;
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
-            padding: 10px 22px;
-            border-radius: 60px;
-            text-align: center;
+            padding: 10px 20px;
+            border-radius: 40px;
             cursor: pointer;
-            touch-action: manipulation;
+            font-family: monospace;
             box-shadow: 0 4px 0 #004466;
             transition: 0.03s linear;
-            font-family: monospace;
-            min-width: 70px;
+            min-width: 80px;
         }
-        .ctrl-btn:active {
+        button:active {
             transform: translateY(3px);
             box-shadow: 0 1px 0 #004466;
         }
-        @media (max-width: 700px) {
-            .ctrl-btn { padding: 8px 16px; font-size: 20px; min-width: 60px; }
-            #speedometer { bottom: 120px; padding: 8px 16px; font-size: 22px; }
-        }
-        .camera-note {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: rgba(0,0,0,0.5);
-            padding: 4px 10px;
-            border-radius: 20px;
+        .key-hint {
+            text-align: center;
+            margin-top: 10px;
             font-size: 10px;
-            color: #0ff;
-            z-index: 10;
-            pointer-events: none;
+            color: #888;
+        }
+        @media (max-width: 600px) {
+            button { padding: 8px 16px; font-size: 18px; min-width: 65px; }
+            .speed { font-size: 16px; }
         }
     </style>
 </head>
 <body>
-    <div id="speedometer">0<small>KM/H</small></div>
-    <div class="key-hint">⌨️ WASD / Panah | 🖱️ Mouse drag buat geser kamera</div>
-    <div class="camera-note">🎥 Kamera: Klik + Drag</div>
-    <div class="controls-panel" id="touchControls">
-        <div class="ctrl-btn" id="btnLeft">◀</div>
-        <div class="ctrl-btn" id="btnUp">▲</div>
-        <div class="ctrl-btn" id="btnDown">▼</div>
-        <div class="ctrl-btn" id="btnRight">▶</div>
+<div>
+    <div class="game-container">
+        <div class="speed">🏁 SPEED: <span id="speedVal">0</span> KM/H 🏁</div>
+        <canvas id="gameCanvas" width="500" height="500"></canvas>
+        <div class="controls" id="touchControls">
+            <button id="leftBtn">◀ KIRI</button>
+            <button id="upBtn">▲ MAJU</button>
+            <button id="downBtn">▼ MUNDUR</button>
+            <button id="rightBtn">KANAN ▶</button>
+        </div>
+        <div class="key-hint">⌨️ LAPTOP: PANAH atau WASD | 📱 HP: TEKAN TOMBOL</div>
+        <div class="info">🚗 Hindari Mobil Merah! 🚗</div>
     </div>
+</div>
 
-    <canvas id="gameCanvas"></canvas>
-
-    <script>
-        (function() {
-            // ============ CANVAS SETUP ============
-            const canvas = document.getElementById('gameCanvas');
-            const ctx = canvas.getContext('2d');
+<script>
+    (function() {
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Ukuran canvas
+        canvas.width = 500;
+        canvas.height = 500;
+        
+        // Player
+        let playerX = canvas.width / 2 - 25;
+        let playerY = canvas.height - 80;
+        const playerWidth = 50;
+        const playerHeight = 50;
+        
+        // Musuh (mobil lawan)
+        let enemies = [];
+        
+        // Skor & kecepatan
+        let score = 0;
+        let speed = 3;
+        let gameRunning = true;
+        let frameCount = 0;
+        
+        // Input flags
+        let leftPressed = false;
+        let rightPressed = false;
+        let upPressed = false;
+        let downPressed = false;
+        
+        // Warna musuh
+        const enemyColors = ['#ff4444', '#ff6666', '#cc3333', '#ff5555', '#ff2222'];
+        
+        // Buat musuh baru
+        function spawnEnemy() {
+            const x = Math.random() * (canvas.width - 40);
+            enemies.push({
+                x: x,
+                y: -50,
+                width: 40,
+                height: 50,
+                color: enemyColors[Math.floor(Math.random() * enemyColors.length)]
+            });
+        }
+        
+        // Spawn awal
+        for(let i = 0; i < 4; i++) {
+            spawnEnemy();
+            enemies[i].y = -100 - i * 80;
+        }
+        
+        // Update game
+        function updateGame() {
+            if(!gameRunning) return;
             
-            let canvasW, canvasH;
-            
-            function resize() {
-                canvasW = window.innerWidth;
-                canvasH = window.innerHeight;
-                canvas.width = canvasW;
-                canvas.height = canvasH;
+            // Gerak maju mundur
+            if(upPressed) {
+                speed += 0.2;
+                if(speed > 12) speed = 12;
             }
-            resize();
-            window.addEventListener('resize', resize);
-            
-            // ============ GAME STATE ============
-            // Posisi mobil di lintasan (-100 sampe 100)
-            let carX = 0;
-            let carSpeed = 0;
-            let roadCurve = 0; // efek belok jalan
-            let cameraAngle = 0; // untuk kamera yang bisa digeser mouse
-            let cameraTargetX = 0;
-            
-            // Data musuh (mobil lain)
-            let enemies = [];
-            
-            // Input flags (keyboard + touch)
-            let inputUp = false;
-            let inputDown = false;
-            let inputLeft = false;
-            let inputRight = false;
-            
-            // Mouse drag untuk kamera
-            let isDragging = false;
-            let lastMouseX = 0;
-            let cameraOffset = 0; // offset kamera (geser layar)
-            
-            // Konstanta gameplay
-            const MAX_SPEED = 16;
-            const ACC = 0.45;
-            const BRAKE = 0.55;
-            const TURN_SPEED = 0.35;
-            
-            // ============ BUAT MUSUH ============
-            function spawnEnemy() {
-                const lane = (Math.random() - 0.5) * 80; // -40 sampe 40
-                enemies.push({
-                    x: lane,
-                    z: -300,
-                    size: 35,
-                    color: `hsl(${Math.random() * 60 + 350}, 70%, 55%)`
-                });
+            if(downPressed) {
+                speed -= 0.3;
+                if(speed < 1) speed = 1;
             }
             
-            // Init enemies
-            for(let i = 0; i < 6; i++) {
+            // Natural friction
+            if(!upPressed && !downPressed) {
+                speed *= 0.99;
+                if(speed < 2) speed = 2;
+            }
+            
+            // Gerak kiri kanan
+            if(leftPressed && playerX > 5) {
+                playerX -= 6;
+            }
+            if(rightPressed && playerX < canvas.width - playerWidth - 5) {
+                playerX += 6;
+            }
+            
+            // Update speedometer
+            let displaySpeed = Math.floor(speed * 8);
+            document.getElementById('speedVal').innerText = displaySpeed;
+            
+            // Update posisi musuh
+            for(let i = 0; i < enemies.length; i++) {
+                enemies[i].y += speed;
+                
+                // Spawn ulang kalo keluar layar
+                if(enemies[i].y > canvas.height) {
+                    enemies[i].y = -50;
+                    enemies[i].x = Math.random() * (canvas.width - 40);
+                    score += 10;
+                }
+            }
+            
+            // Spawn musuh baru setiap frame tertentu
+            frameCount++;
+            if(frameCount > 40 && enemies.length < 8) {
                 spawnEnemy();
-                enemies[i].z = -80 - i * 70;
+                frameCount = 0;
             }
             
-            let spawnTimer = 0;
-            
-            // ============ UPDATE GAME ============
-            function updateGame() {
-                // ---- Input ----
-                if (inputUp) {
-                    carSpeed += ACC;
-                    if (carSpeed > MAX_SPEED) carSpeed = MAX_SPEED;
-                } else if (inputDown) {
-                    carSpeed -= BRAKE;
-                    if (carSpeed < -MAX_SPEED/2.5) carSpeed = -MAX_SPEED/2.5;
-                } else {
-                    carSpeed *= 0.98;
-                    if (Math.abs(carSpeed) < 0.1) carSpeed = 0;
+            // COLLISION DETECTION
+            for(let i = 0; i < enemies.length; i++) {
+                const e = enemies[i];
+                if(playerX < e.x + e.width &&
+                   playerX + playerWidth > e.x &&
+                   playerY < e.y + e.height &&
+                   playerY + playerHeight > e.y) {
+                    gameRunning = false;
+                    alert('💥 GAME OVER! 💥\nSkor: ' + score + '\nTekan OK untuk restart');
+                    restartGame();
+                    return;
                 }
-                
-                // Belok
-                let turn = 0;
-                if (inputLeft) turn = -TURN_SPEED;
-                if (inputRight) turn = TURN_SPEED;
-                
-                if (Math.abs(carSpeed) > 0.5) {
-                    carX += turn * (Math.abs(carSpeed) / MAX_SPEED) * 2.2;
-                    roadCurve += turn * 0.03 * (Math.abs(carSpeed) / MAX_SPEED);
-                }
-                
-                // Batas lintasan
-                carX = Math.min(Math.max(carX, -70), 70);
-                roadCurve = Math.min(Math.max(roadCurve, -0.5), 0.5);
-                
-                // Geser kamera (mouse drag)
-                if (!isDragging) {
-                    cameraOffset += (cameraTargetX - cameraOffset) * 0.1;
-                }
-                
-                // Update posisi musuh
-                for(let i = 0; i < enemies.length; i++) {
-                    enemies[i].z += carSpeed * 3.2;
-                    if(enemies[i].z > 150) {
-                        enemies.splice(i,1);
-                        i--;
-                    }
-                }
-                
-                // Spawn musuh baru
-                spawnTimer++;
-                if(spawnTimer > 40 && enemies.length < 9) {
-                    spawnEnemy();
-                    spawnTimer = 0;
-                }
-                
-                // Collision detection (sederhana)
-                const playerScreenX = canvasW/2;
-                const playerY = canvasH - 100;
-                
-                for(let i = 0; i < enemies.length; i++) {
-                    const e = enemies[i];
-                    // Hitung posisi musuh di layar
-                    const t = (e.z + 200) / 400;
-                    if(t >= 0 && t <= 1) {
-                        const enemyY = canvasH * 0.45 + t * (canvasH * 0.5) - 40;
-                        if(enemyY > playerY - 50 && enemyY < playerY + 30) {
-                            const roadWidthAtY = 250 * (1 - t * 0.6);
-                            const laneOffset = e.x;
-                            const centerX = canvasW/2 + cameraOffset * 2;
-                            const enemyX = centerX + laneOffset * (roadWidthAtY / 100) - 20;
-                            
-                            if(Math.abs(enemyX - playerScreenX) < 55) {
-                                // TABRAKAN!
-                                carSpeed = -4;
-                                // Efek flash merah
-                                ctx.fillStyle = '#ff000080';
-                                ctx.fillRect(0,0,canvasW,canvasH);
-                                setTimeout(() => {}, 50);
-                                // Hapus musuh
-                                enemies.splice(i,1);
-                                break;
-                            }
-                        }
-                    }
-                }
-                
-                // Update speedometer
-                let spd = Math.floor(Math.abs(carSpeed) * 10);
-                document.getElementById('speedometer').innerHTML = `${spd}<small>KM/H</small>`;
             }
+        }
+        
+        function restartGame() {
+            gameRunning = true;
+            score = 0;
+            speed = 3;
+            playerX = canvas.width / 2 - 25;
+            enemies = [];
+            for(let i = 0; i < 4; i++) {
+                spawnEnemy();
+                enemies[i].y = -100 - i * 80;
+            }
+            document.getElementById('speedVal').innerText = '0';
+        }
+        
+        // DRAW SEMUA
+        function draw() {
+            // Background jalan
+            ctx.fillStyle = '#1a1a2a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // ============ GAMBAR SEMUANYA (Pseudo 3D) ============
-            function draw() {
-                const centerX = canvasW/2 + cameraOffset * 2;
-                const horizonY = canvasH * 0.44;
-                const roadBaseW = 320;
-                const roadTopW = 130;
-                
-                // Langit gradien
-                const gradSky = ctx.createLinearGradient(0, 0, 0, canvasH/2);
-                gradSky.addColorStop(0, '#050b1a');
-                gradSky.addColorStop(1, '#0f1a2e');
-                ctx.fillStyle = gradSky;
-                ctx.fillRect(0, 0, canvasW, canvasH);
-                
-                // Ground
-                ctx.fillStyle = '#12121f';
-                ctx.fillRect(0, canvasH/2, canvasW, canvasH/2);
-                
-                // ---- JALAN DENGAN EFEK BELOK ----
-                const curveOffset = roadCurve * 80;
-                
+            // Garis jalan
+            ctx.strokeStyle = '#ffff00';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([20, 30]);
+            for(let i = 0; i < 10; i++) {
                 ctx.beginPath();
-                ctx.moveTo(centerX - roadBaseW/2 + curveOffset, canvasH);
-                ctx.lineTo(centerX - roadTopW/2 + curveOffset, horizonY);
-                ctx.lineTo(centerX + roadTopW/2 + curveOffset, horizonY);
-                ctx.lineTo(centerX + roadBaseW/2 + curveOffset, canvasH);
-                ctx.fillStyle = '#1e1e2e';
-                ctx.fill();
+                ctx.moveTo(canvas.width/2, i * 50);
+                ctx.lineTo(canvas.width/2, i * 50 + 30);
+                ctx.stroke();
+            }
+            ctx.setLineDash([]);
+            
+            // Garis pinggir
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+            
+            // Gambar musuh
+            for(let e of enemies) {
+                // Body mobil musuh
+                ctx.fillStyle = e.color;
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = 'red';
+                ctx.fillRect(e.x, e.y, e.width, e.height);
                 
-                // Pinggir jalan kiri
-                ctx.beginPath();
-                ctx.moveTo(centerX - roadBaseW/2 + curveOffset, canvasH);
-                ctx.lineTo(centerX - roadTopW/2 + curveOffset, horizonY);
-                ctx.lineTo(centerX - roadTopW/2 + 12 + curveOffset, horizonY);
-                ctx.lineTo(centerX - roadBaseW/2 + 20 + curveOffset, canvasH);
-                ctx.fillStyle = '#ffcc66';
-                ctx.fill();
-                
-                // Pinggir kanan
-                ctx.beginPath();
-                ctx.moveTo(centerX + roadBaseW/2 + curveOffset, canvasH);
-                ctx.lineTo(centerX + roadTopW/2 + curveOffset, horizonY);
-                ctx.lineTo(centerX + roadTopW/2 - 12 + curveOffset, horizonY);
-                ctx.lineTo(centerX + roadBaseW/2 - 20 + curveOffset, canvasH);
-                ctx.fill();
-                
-                // Garis tengah putus-putus
-                ctx.beginPath();
-                ctx.setLineDash([20, 35]);
-                ctx.lineWidth = 4;
-                ctx.strokeStyle = '#ffffaa';
-                for(let i = 0; i < 15; i++) {
-                    const y = horizonY + i * 38;
-                    if(y > canvasH) break;
-                    const t = (y - horizonY) / (canvasH - horizonY);
-                    const lineW = roadTopW + (roadBaseW - roadTopW) * t;
-                    const x = centerX - lineW/2 + lineW/2 + curveOffset * (1 - t);
-                    ctx.beginPath();
-                    ctx.moveTo(x, y);
-                    ctx.lineTo(x, y + 20);
-                    ctx.stroke();
-                }
-                ctx.setLineDash([]);
-                
-                // ---- GAMBAR MOBIL MUSUH ----
-                for(let e of enemies) {
-                    const t = (e.z + 250) / 500;
-                    if(t < 0 || t > 1) continue;
-                    const yPos = horizonY + t * (canvasH - horizonY) - 45;
-                    if(yPos > canvasH + 50 || yPos < -50) continue;
-                    
-                    const roadWAtY = roadTopW + (roadBaseW - roadTopW) * t;
-                    const laneOffsetX = e.x * (roadWAtY / 110);
-                    const xPos = centerX + laneOffsetX + curveOffset * (1 - t) - e.size/2;
-                    
-                    // Body mobil musuh
-                    ctx.shadowBlur = 6;
-                    ctx.fillStyle = e.color;
-                    ctx.beginPath();
-                    ctx.roundRect(xPos, yPos, e.size, e.size * 0.85, 8);
-                    ctx.fill();
-                    ctx.fillStyle = '#333';
-                    ctx.fillRect(xPos + e.size*0.2, yPos + e.size*0.2, e.size*0.6, e.size*0.3);
-                    ctx.fillStyle = '#aaa';
-                    ctx.fillRect(xPos + e.size*0.1, yPos + e.size*0.65, e.size*0.2, e.size*0.12);
-                    ctx.fillRect(xPos + e.size*0.7, yPos + e.size*0.65, e.size*0.2, e.size*0.12);
-                }
-                
-                // ---- MOBIL PLAYER ----
-                const playerY = canvasH - 95;
-                const playerSize = 48;
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = '#0ff';
-                ctx.fillStyle = '#33ff88';
-                ctx.beginPath();
-                ctx.roundRect(canvasW/2 - playerSize/2, playerY, playerSize, playerSize * 0.85, 10);
-                ctx.fill();
-                ctx.fillStyle = '#aaffff';
-                ctx.fillRect(canvasW/2 - playerSize/4, playerY + 8, playerSize/2, playerSize/3);
-                ctx.fillStyle = '#ffaa33';
-                ctx.fillRect(canvasW/2 - playerSize/3, playerY + playerSize*0.55, playerSize/3, 8);
-                ctx.fillRect(canvasW/2 + playerSize/6, playerY + playerSize*0.55, playerSize/3, 8);
-                ctx.fillStyle = 'white';
-                ctx.beginPath();
-                ctx.arc(canvasW/2 - playerSize/5, playerY + playerSize*0.27, 6, 0, Math.PI*2);
-                ctx.arc(canvasW/2 + playerSize/5, playerY + playerSize*0.27, 6, 0, Math.PI*2);
-                ctx.fill();
-                ctx.fillStyle = '#000';
-                ctx.beginPath();
-                ctx.arc(canvasW/2 - playerSize/5 - 2, playerY + playerSize*0.25, 2.5, 0, Math.PI*2);
-                ctx.arc(canvasW/2 + playerSize/5 - 2, playerY + playerSize*0.25, 2.5, 0, Math.PI*2);
-                ctx.fill();
+                // Kaca
+                ctx.fillStyle = '#333366';
+                ctx.fillRect(e.x + 8, e.y + 8, e.width - 16, 15);
                 
                 // Lampu
-                ctx.fillStyle = '#ffaa66';
-                ctx.fillRect(canvasW/2 - playerSize/2.5, playerY - 4, 7, 7);
-                ctx.fillRect(canvasW/2 + playerSize/2.5 - 7, playerY - 4, 7, 7);
+                ctx.fillStyle = '#ffff00';
+                ctx.fillRect(e.x + 5, e.y + e.height - 10, 8, 6);
+                ctx.fillRect(e.x + e.width - 13, e.y + e.height - 10, 8, 6);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(e.x + 5, e.y + 2, 6, 6);
+                ctx.fillRect(e.x + e.width - 11, e.y + 2, 6, 6);
                 
-                ctx.shadowBlur = 0;
-                
-                // Teks kecepatan tambahan
-                ctx.font = "bold 14px monospace";
-                ctx.fillStyle = "#0ff";
-                ctx.shadowBlur = 0;
-                ctx.fillText("⚡ DRAG MOUSE UNTUK GESER KAMERA ⚡", canvasW/2 - 150, 30);
+                // Roda
+                ctx.fillStyle = '#222';
+                ctx.fillRect(e.x + 5, e.y + e.height - 12, 8, 8);
+                ctx.fillRect(e.x + e.width - 13, e.y + e.height - 12, 8, 8);
+                ctx.fillRect(e.x + 5, e.y + 2, 8, 8);
+                ctx.fillRect(e.x + e.width - 13, e.y + 2, 8, 8);
             }
             
-            // Helper roundRect
-            if (!CanvasRenderingContext2D.prototype.roundRect) {
-                CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
-                    if (w < 2 * r) r = w / 2;
-                    if (h < 2 * r) r = h / 2;
-                    this.moveTo(x+r, y);
-                    this.lineTo(x+w-r, y);
-                    this.quadraticCurveTo(x+w, y, x+w, y+r);
-                    this.lineTo(x+w, y+h-r);
-                    this.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
-                    this.lineTo(x+r, y+h);
-                    this.quadraticCurveTo(x, y+h, x, y+h-r);
-                    this.lineTo(x, y+r);
-                    this.quadraticCurveTo(x, y, x+r, y);
-                    return this;
-                };
-            }
+            // Gambar PLAYER (mobil hijau)
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = '#0ff';
+            ctx.fillStyle = '#33ff88';
+            ctx.fillRect(playerX, playerY, playerWidth, playerHeight);
             
-            // ============ INPUT HANDLER ============
-            function setupInputs() {
-                // Keyboard
-                window.addEventListener('keydown', (e) => {
-                    const key = e.key;
-                    if (key === 'ArrowUp' || key === 'w') inputUp = true;
-                    if (key === 'ArrowDown' || key === 's') inputDown = true;
-                    if (key === 'ArrowLeft' || key === 'a') inputLeft = true;
-                    if (key === 'ArrowRight' || key === 'd') inputRight = true;
-                    e.preventDefault();
-                });
-                window.addEventListener('keyup', (e) => {
-                    const key = e.key;
-                    if (key === 'ArrowUp' || key === 'w') inputUp = false;
-                    if (key === 'ArrowDown' || key === 's') inputDown = false;
-                    if (key === 'ArrowLeft' || key === 'a') inputLeft = false;
-                    if (key === 'ArrowRight' || key === 'd') inputRight = false;
-                });
-                
-                // Mouse drag untuk kamera (geser layar)
-                canvas.addEventListener('mousedown', (e) => {
-                    isDragging = true;
-                    lastMouseX = e.clientX;
-                    canvas.style.cursor = 'grabbing';
-                });
-                window.addEventListener('mousemove', (e) => {
-                    if (isDragging) {
-                        const deltaX = e.clientX - lastMouseX;
-                        cameraTargetX += deltaX * 0.3;
-                        cameraTargetX = Math.min(Math.max(cameraTargetX, -150), 150);
-                        lastMouseX = e.clientX;
-                    }
-                });
-                window.addEventListener('mouseup', () => {
-                    isDragging = false;
-                    canvas.style.cursor = 'grab';
-                });
-                
-                // Touch screen (HP)
-                const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-                if (isTouch) {
-                    document.getElementById('touchControls').style.display = 'flex';
-                    const tUp = document.getElementById('btnUp');
-                    const tDown = document.getElementById('btnDown');
-                    const tLeft = document.getElementById('btnLeft');
-                    const tRight = document.getElementById('btnRight');
-                    
-                    tUp.addEventListener('touchstart', (e) => { e.preventDefault(); inputUp = true; });
-                    tUp.addEventListener('touchend', () => { inputUp = false; });
-                    tDown.addEventListener('touchstart', (e) => { e.preventDefault(); inputDown = true; });
-                    tDown.addEventListener('touchend', () => { inputDown = false; });
-                    tLeft.addEventListener('touchstart', (e) => { e.preventDefault(); inputLeft = true; });
-                    tLeft.addEventListener('touchend', () => { inputLeft = false; });
-                    tRight.addEventListener('touchstart', (e) => { e.preventDefault(); inputRight = true; });
-                    tRight.addEventListener('touchend', () => { inputRight = false; });
-                    
-                    // Touch drag untuk kamera
-                    canvas.addEventListener('touchstart', (e) => {
-                        if (e.touches.length === 1) {
-                            isDragging = true;
-                            lastMouseX = e.touches[0].clientX;
-                        }
-                    });
-                    canvas.addEventListener('touchmove', (e) => {
-                        if (isDragging && e.touches.length === 1) {
-                            const deltaX = e.touches[0].clientX - lastMouseX;
-                            cameraTargetX += deltaX * 0.35;
-                            cameraTargetX = Math.min(Math.max(cameraTargetX, -150), 150);
-                            lastMouseX = e.touches[0].clientX;
-                            e.preventDefault();
-                        }
-                    });
-                    canvas.addEventListener('touchend', () => {
-                        isDragging = false;
-                    });
-                }
-            }
+            // Kaca mobil player
+            ctx.fillStyle = '#88ccff';
+            ctx.fillRect(playerX + 10, playerY + 8, playerWidth - 20, 15);
             
-            // ============ LOOP UTAMA ============
-            function gameLoop() {
-                updateGame();
-                draw();
-                requestAnimationFrame(gameLoop);
-            }
+            // Lampu player
+            ctx.fillStyle = '#ffaa44';
+            ctx.fillRect(playerX + 5, playerY + playerHeight - 10, 8, 6);
+            ctx.fillRect(playerX + playerWidth - 13, playerY + playerHeight - 10, 8, 6);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(playerX + 5, playerY + 2, 6, 6);
+            ctx.fillRect(playerX + playerWidth - 11, playerY + 2, 6, 6);
             
-            setupInputs();
-            gameLoop();
-        })();
-    </script>
+            // Roda player
+            ctx.fillStyle = '#111';
+            ctx.fillRect(playerX + 5, playerY + playerHeight - 12, 8, 8);
+            ctx.fillRect(playerX + playerWidth - 13, playerY + playerHeight - 12, 8, 8);
+            ctx.fillRect(playerX + 5, playerY + 2, 8, 8);
+            ctx.fillRect(playerX + playerWidth - 13, playerY + 2, 8, 8);
+            
+            ctx.shadowBlur = 0;
+            
+            // Skor
+            ctx.font = "bold 18px monospace";
+            ctx.fillStyle = "#0ff";
+            ctx.shadowBlur = 0;
+            ctx.fillText("SCORE: " + score, 15, 35);
+        }
+        
+        // ============ INPUT HANDLER ============
+        // Keyboard
+        window.addEventListener('keydown', (e) => {
+            const key = e.key;
+            if(key === 'ArrowLeft' || key === 'a' || key === 'A') leftPressed = true;
+            if(key === 'ArrowRight' || key === 'd' || key === 'D') rightPressed = true;
+            if(key === 'ArrowUp' || key === 'w' || key === 'W') upPressed = true;
+            if(key === 'ArrowDown' || key === 's' || key === 'S') downPressed = true;
+            e.preventDefault();
+        });
+        
+        window.addEventListener('keyup', (e) => {
+            const key = e.key;
+            if(key === 'ArrowLeft' || key === 'a' || key === 'A') leftPressed = false;
+            if(key === 'ArrowRight' || key === 'd' || key === 'D') rightPressed = false;
+            if(key === 'ArrowUp' || key === 'w' || key === 'W') upPressed = false;
+            if(key === 'ArrowDown' || key === 's' || key === 'S') downPressed = false;
+        });
+        
+        // Tombol touch (HP)
+        const leftBtn = document.getElementById('leftBtn');
+        const rightBtn = document.getElementById('rightBtn');
+        const upBtn = document.getElementById('upBtn');
+        const downBtn = document.getElementById('downBtn');
+        
+        leftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); leftPressed = true; });
+        leftBtn.addEventListener('touchend', () => { leftPressed = false; });
+        leftBtn.addEventListener('mousedown', () => { leftPressed = true; });
+        leftBtn.addEventListener('mouseup', () => { leftPressed = false; });
+        
+        rightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); rightPressed = true; });
+        rightBtn.addEventListener('touchend', () => { rightPressed = false; });
+        rightBtn.addEventListener('mousedown', () => { rightPressed = true; });
+        rightBtn.addEventListener('mouseup', () => { rightPressed = false; });
+        
+        upBtn.addEventListener('touchstart', (e) => { e.preventDefault(); upPressed = true; });
+        upBtn.addEventListener('touchend', () => { upPressed = false; });
+        upBtn.addEventListener('mousedown', () => { upPressed = true; });
+        upBtn.addEventListener('mouseup', () => { upPressed = false; });
+        
+        downBtn.addEventListener('touchstart', (e) => { e.preventDefault(); downPressed = true; });
+        downBtn.addEventListener('touchend', () => { downPressed = false; });
+        downBtn.addEventListener('mousedown', () => { downPressed = true; });
+        downBtn.addEventListener('mouseup', () => { downPressed = false; });
+        
+        // Animasi loop
+        function gameLoop() {
+            updateGame();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        gameLoop();
+    })();
+</script>
 </body>
 </html>
