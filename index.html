@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RACING SIMPLE - Halow brow</title>
+    <title>RACING - Inorya</title>
     <style>
         * {
             user-select: none;
@@ -12,7 +12,7 @@
         body {
             margin: 0;
             min-height: 100vh;
-            background: linear-gradient(180deg, #0a0f1e 0%, #1a1a2e 100%);
+            background: linear-gradient(180deg, #0a0f1e 0%, #0f1a2e 100%);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -22,41 +22,45 @@
             background: #0a0a1a;
             padding: 15px;
             border-radius: 20px;
-            border: 2px solid cyan;
+            border: 2px solid #0ff;
             box-shadow: 0 0 20px rgba(0,255,255,0.3);
         }
         canvas {
             display: block;
             margin: 0 auto;
             border-radius: 10px;
-            background: #1a1a2a;
+            background: #151525;
+            box-shadow: 0 0 10px rgba(0,255,255,0.3);
         }
         .info {
             text-align: center;
             margin-top: 10px;
-            color: cyan;
-            font-size: 14px;
+            color: #0ff;
+            font-size: 13px;
         }
-        .speed {
+        .speed-panel {
             text-align: center;
-            color: yellow;
-            font-size: 20px;
+            color: #ff0;
+            font-size: 22px;
             font-weight: bold;
             margin-bottom: 10px;
+            background: #00000066;
+            padding: 5px;
+            border-radius: 30px;
         }
         .controls {
             display: flex;
             justify-content: center;
-            gap: 15px;
+            gap: 20px;
             margin-top: 15px;
         }
         button {
             background: linear-gradient(145deg, #1a1a2e, #0a0a1a);
-            border: 1px solid cyan;
-            color: cyan;
+            border: 1px solid #0ff;
+            color: #0ff;
             font-size: 24px;
             font-weight: bold;
-            padding: 10px 25px;
+            padding: 10px 28px;
             border-radius: 50px;
             cursor: pointer;
             font-family: monospace;
@@ -73,22 +77,23 @@
             font-size: 10px;
             color: #888;
         }
-        @media (max-width: 600px) {
-            button { padding: 8px 20px; font-size: 20px; }
+        @media (max-width: 550px) {
+            button { padding: 8px 22px; font-size: 20px; }
+            .speed-panel { font-size: 18px; }
         }
     </style>
 </head>
 <body>
 <div>
     <div class="game-container">
-        <div class="speed">🏁 SPEED: <span id="speedVal">0</span> KM/H 🏁</div>
+        <div class="speed-panel">⚡ SPEED: <span id="speedVal">0</span> KM/H ⚡</div>
         <canvas id="gameCanvas" width="400" height="550"></canvas>
         <div class="controls">
             <button id="leftBtn">◀ KIRI</button>
             <button id="rightBtn">KANAN ▶</button>
         </div>
-        <div class="key-hint">⌨️ LAPTOP: ← → atau A D | 📱 HP: TEKAN TOMBOL</div>
-        <div class="info">🚗 Hindari Mobil Merah! Mobilmu maju otomatis 🚗</div>
+        <div class="key-hint">⌨️ ← → atau A D | 📱 TEKAN TOMBOL</div>
+        <div class="info">🚗 Hindari mobil lain! 🚗</div>
     </div>
 </div>
 
@@ -100,79 +105,145 @@
         canvas.width = 400;
         canvas.height = 550;
         
-        // PLAYER (mobil hijau)
-        let playerX = canvas.width / 2 - 25;
-        const playerWidth = 45;
-        const playerHeight = 55;
+        // ============ PLAYER ============
+        let playerX = canvas.width / 2 - 23;
+        const playerWidth = 46;
+        const playerHeight = 56;
         const playerY = canvas.height - 80;
         
-        // MUSUH
+        // ============ MUSUH ============
         let enemies = [];
-        
         let score = 0;
-        let baseSpeed = 4;
+        let baseSpeed = 3.8;
         let gameRunning = true;
-        let frameCount = 0;
+        let spawnDelay = 0;
         
-        // Input (cuma kiri/kanan)
-        let leftPressed = false;
-        let rightPressed = false;
+        // Warna musuh (beda-beda)
+        const enemyColors = [
+            '#e74c3c', // merah
+            '#3498db', // biru
+            '#9b59b6', // ungu
+            '#e67e22', // jingga
+            '#f1c40f', // kuning
+            '#2ecc71', // hijau
+            '#e91e63'  // pink
+        ];
         
-        // Spawn musuh
+        // ============ CEK APAKAH MOBIL BISA SPAWN (GAK BENTUR SAMA YANG LAIN) ============
+        function canSpawnAt(x, y) {
+            for(let e of enemies) {
+                if(Math.abs(e.x - x) < 42 && Math.abs(e.y - y) < 55) {
+                    return false;
+                }
+                // juga cek jarak vertikal terlalu dekat
+                if(Math.abs(e.y - y) < 70 && Math.abs(e.x - x) < 45) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        
+        // ============ SPAWN MUSUH ============
         function spawnEnemy() {
-            const x = 20 + Math.random() * (canvas.width - 60);
-            enemies.push({
-                x: x,
-                y: -60,
-                width: 40,
-                height: 50,
-                color: '#ff4444'
-            });
+            if(!gameRunning) return;
+            
+            let attempts = 0;
+            let spawned = false;
+            
+            while(attempts < 15 && !spawned) {
+                const randX = 12 + Math.random() * (canvas.width - 52);
+                const randY = -60 - Math.random() * 80;
+                
+                if(canSpawnAt(randX, randY)) {
+                    enemies.push({
+                        x: randX,
+                        y: randY,
+                        width: 42,
+                        height: 52,
+                        color: enemyColors[Math.floor(Math.random() * enemyColors.length)]
+                    });
+                    spawned = true;
+                }
+                attempts++;
+            }
+            
+            // kalo gagal spawn, paksa spawn di pojok
+            if(!spawned) {
+                enemies.push({
+                    x: 15 + Math.random() * (canvas.width - 57),
+                    y: -60,
+                    width: 42,
+                    height: 52,
+                    color: enemyColors[Math.floor(Math.random() * enemyColors.length)]
+                });
+            }
         }
         
-        // Musuh awal (dikit biar ga rame)
-        for(let i = 0; i < 3; i++) {
+        // ============ MUSUH AWAL (2 aja biar ga rame) ============
+        for(let i = 0; i < 2; i++) {
             spawnEnemy();
-            enemies[i].y = -100 - i * 120;
+            if(enemies[i]) enemies[i].y = -100 - i * 150;
         }
         
+        // ============ UPDATE ============
         function updateGame() {
             if(!gameRunning) return;
             
-            // Kecepatan nambah dikit setiap saat
-            baseSpeed += 0.003;
-            if(baseSpeed > 9) baseSpeed = 9;
+            // Kecepatan makin lama makin cepet
+            baseSpeed += 0.0025;
+            if(baseSpeed > 8.5) baseSpeed = 8.5;
             
-            let displaySpeed = Math.floor(baseSpeed * 12);
+            let displaySpeed = Math.floor(baseSpeed * 11);
             document.getElementById('speedVal').innerText = displaySpeed;
             
-            // Gerak kiri kanan player
-            if(leftPressed && playerX > 10) {
-                playerX -= 6;
-            }
-            if(rightPressed && playerX < canvas.width - playerWidth - 10) {
-                playerX += 6;
-            }
+            // Gerak player (kiri/kanan)
+            if(leftPressed && playerX > 8) playerX -= 5.5;
+            if(rightPressed && playerX < canvas.width - playerWidth - 8) playerX += 5.5;
             
-            // Update posisi musuh (turun)
+            // Update posisi musuh & collision antar musuh (biar ga numpuk)
             for(let i = 0; i < enemies.length; i++) {
                 enemies[i].y += baseSpeed;
                 
-                if(enemies[i].y > canvas.height) {
-                    enemies[i].y = -60;
-                    enemies[i].x = 20 + Math.random() * (canvas.width - 60);
+                // Cek collision antar musuh (biar ga gabung)
+                for(let j = i + 1; j < enemies.length; j++) {
+                    const a = enemies[i];
+                    const b = enemies[j];
+                    if(Math.abs(a.x - b.x) < 44 && Math.abs(a.y - b.y) < 56) {
+                        // dorong salah satu
+                        if(a.y < b.y) {
+                            a.y -= 3;
+                            b.y += 3;
+                        } else {
+                            a.y += 3;
+                            b.y -= 3;
+                        }
+                        // batasin ga keluar layar atas
+                        if(a.y < -60) a.y = -60;
+                        if(b.y < -60) b.y = -60;
+                    }
+                }
+                
+                // Hapus kalo keluar bawah, spawn baru di atas
+                if(enemies[i].y > canvas.height + 60) {
+                    enemies.splice(i,1);
+                    i--;
                     score++;
+                    spawnEnemy();
                 }
             }
             
-            // Spawn musuh baru pelan-pelan
-            frameCount++;
-            if(frameCount > 70 && enemies.length < 5) {
-                spawnEnemy();
-                frameCount = 0;
+            // Spawn musuh baru kalo kurang dari 3
+            if(enemies.length < 3 && gameRunning) {
+                spawnDelay++;
+                if(spawnDelay > 25) {
+                    spawnEnemy();
+                    spawnDelay = 0;
+                }
+            } else {
+                spawnDelay = 0;
             }
             
-            // COLLISION
+            // ============ COLLISION PLAYER VS MUSUH ============
             for(let i = 0; i < enemies.length; i++) {
                 const e = enemies[i];
                 if(playerX < e.x + e.width &&
@@ -190,98 +261,151 @@
         function restartGame() {
             gameRunning = true;
             score = 0;
-            baseSpeed = 4;
-            playerX = canvas.width / 2 - 22;
+            baseSpeed = 3.8;
+            playerX = canvas.width / 2 - 23;
             enemies = [];
-            for(let i = 0; i < 3; i++) {
+            for(let i = 0; i < 2; i++) {
                 spawnEnemy();
-                enemies[i].y = -100 - i * 120;
+                if(enemies[i]) enemies[i].y = -100 - i * 150;
             }
             document.getElementById('speedVal').innerText = '0';
+            spawnDelay = 0;
         }
         
+        // ============ GAMBAR MOBIL (LENGKAP) ============
+        function drawCar(x, y, w, h, color, isPlayer) {
+            // Body utama
+            ctx.fillStyle = color;
+            ctx.shadowBlur = isPlayer ? 10 : 5;
+            ctx.shadowColor = isPlayer ? '#0ff' : '#f00';
+            ctx.beginPath();
+            ctx.roundRect(x, y, w, h, 10);
+            ctx.fill();
+            
+            // Kaca depan
+            ctx.fillStyle = isPlayer ? '#88ddff' : '#335588';
+            ctx.beginPath();
+            ctx.roundRect(x + 8, y + 8, w - 16, 14, 5);
+            ctx.fill();
+            
+            // Kaca belakang
+            ctx.fillStyle = isPlayer ? '#88aaff' : '#224466';
+            ctx.beginPath();
+            ctx.roundRect(x + 10, y + h - 22, w - 20, 12, 4);
+            ctx.fill();
+            
+            // Lampu depan (kuning)
+            ctx.fillStyle = '#ffcc44';
+            ctx.fillRect(x + 5, y + 3, 7, 6);
+            ctx.fillRect(x + w - 12, y + 3, 7, 6);
+            
+            // Lampu belakang (merah)
+            ctx.fillStyle = '#ff4422';
+            ctx.fillRect(x + 5, y + h - 10, 7, 6);
+            ctx.fillRect(x + w - 12, y + h - 10, 7, 6);
+            
+            // Roda
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(x + 5, y + h - 12, 8, 8);
+            ctx.fillRect(x + w - 13, y + h - 12, 8, 8);
+            ctx.fillRect(x + 5, y + 3, 8, 8);
+            ctx.fillRect(x + w - 13, y + 3, 8, 8);
+            
+            // Velg roda (sedikit aksen)
+            ctx.fillStyle = '#555';
+            ctx.fillRect(x + 7, y + h - 10, 4, 4);
+            ctx.fillRect(x + w - 11, y + h - 10, 4, 4);
+            ctx.fillRect(x + 7, y + 5, 4, 4);
+            ctx.fillRect(x + w - 11, y + 5, 4, 4);
+            
+            // Kaca spion (cuma player)
+            if(isPlayer) {
+                ctx.fillStyle = '#aaa';
+                ctx.fillRect(x - 4, y + 15, 4, 6);
+                ctx.fillRect(x + w, y + 15, 4, 6);
+            }
+        }
+        
+        // Helper roundRect
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+                if (w < 2 * r) r = w / 2;
+                if (h < 2 * r) r = h / 2;
+                this.moveTo(x+r, y);
+                this.lineTo(x+w-r, y);
+                this.quadraticCurveTo(x+w, y, x+w, y+r);
+                this.lineTo(x+w, y+h-r);
+                this.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+                this.lineTo(x+r, y+h);
+                this.quadraticCurveTo(x, y+h, x, y+h-r);
+                this.lineTo(x, y+r);
+                this.quadraticCurveTo(x, y, x+r, y);
+                return this;
+            };
+        }
+        
+        // ============ DRAW SEMUA ============
         function draw() {
-            // Background
-            ctx.fillStyle = '#1a1a2a';
+            // Background aspal
+            ctx.fillStyle = '#151525';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Garis tengah putus-putus
+            // Garis tengah putus-putus (efek gerak)
             ctx.beginPath();
-            ctx.setLineDash([15, 25]);
-            ctx.strokeStyle = '#ffff00';
+            ctx.setLineDash([15, 28]);
+            ctx.strokeStyle = '#ffff88';
             ctx.lineWidth = 3;
-            for(let i = 0; i < 15; i++) {
+            for(let i = 0; i < 18; i++) {
                 ctx.beginPath();
-                ctx.moveTo(canvas.width/2, i * 45);
-                ctx.lineTo(canvas.width/2, i * 45 + 25);
+                ctx.moveTo(canvas.width/2, (i * 40 + Date.now() * 0.003 * baseSpeed) % 550);
+                ctx.lineTo(canvas.width/2, (i * 40 + Date.now() * 0.003 * baseSpeed + 25) % 550);
                 ctx.stroke();
             }
             ctx.setLineDash([]);
             
-            // Pinggir jalan
-            ctx.strokeStyle = '#ffffff88';
+            // Garis pinggir jalan
+            ctx.strokeStyle = '#55aaff';
             ctx.lineWidth = 2;
-            ctx.strokeRect(8, 8, canvas.width - 16, canvas.height - 16);
+            ctx.strokeRect(6, 6, canvas.width - 12, canvas.height - 12);
             
-            // GAMBAR MUSUH (mobil merah)
+            // Garis pembatas jalur
+            ctx.strokeStyle = '#3388aa';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(canvas.width/2 - 60, 0);
+            ctx.lineTo(canvas.width/2 - 60, canvas.height);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(canvas.width/2 + 60, 0);
+            ctx.lineTo(canvas.width/2 + 60, canvas.height);
+            ctx.stroke();
+            
+            // Gambar musuh
             for(let e of enemies) {
-                ctx.fillStyle = e.color;
-                ctx.shadowBlur = 6;
-                ctx.shadowColor = 'red';
-                ctx.fillRect(e.x, e.y, e.width, e.height);
-                
-                // Kaca
-                ctx.fillStyle = '#333366';
-                ctx.fillRect(e.x + 8, e.y + 8, e.width - 16, 12);
-                
-                // Lampu
-                ctx.fillStyle = '#ffaa00';
-                ctx.fillRect(e.x + 5, e.y + e.height - 8, 7, 5);
-                ctx.fillRect(e.x + e.width - 12, e.y + e.height - 8, 7, 5);
-                
-                // Roda
-                ctx.fillStyle = '#222';
-                ctx.fillRect(e.x + 5, e.y + e.height - 10, 7, 7);
-                ctx.fillRect(e.x + e.width - 12, e.y + e.height - 10, 7, 7);
-                ctx.fillRect(e.x + 5, e.y + 3, 7, 7);
-                ctx.fillRect(e.x + e.width - 12, e.y + 3, 7, 7);
+                drawCar(e.x, e.y, e.width, e.height, e.color, false);
             }
             
-            // GAMBAR PLAYER (mobil hijau)
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = '#0ff';
-            ctx.fillStyle = '#33ff88';
-            ctx.fillRect(playerX, playerY, playerWidth, playerHeight);
-            
-            // Kaca
-            ctx.fillStyle = '#88ccff';
-            ctx.fillRect(playerX + 10, playerY + 8, playerWidth - 20, 12);
-            
-            // Lampu
-            ctx.fillStyle = '#ffaa44';
-            ctx.fillRect(playerX + 5, playerY + playerHeight - 8, 7, 5);
-            ctx.fillRect(playerX + playerWidth - 12, playerY + playerHeight - 8, 7, 5);
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(playerX + 5, playerY + 3, 6, 6);
-            ctx.fillRect(playerX + playerWidth - 11, playerY + 3, 6, 6);
-            
-            // Roda
-            ctx.fillStyle = '#111';
-            ctx.fillRect(playerX + 5, playerY + playerHeight - 10, 7, 7);
-            ctx.fillRect(playerX + playerWidth - 12, playerY + playerHeight - 10, 7, 7);
-            ctx.fillRect(playerX + 5, playerY + 3, 7, 7);
-            ctx.fillRect(playerX + playerWidth - 12, playerY + 3, 7, 7);
-            
-            ctx.shadowBlur = 0;
+            // Gambar player
+            drawCar(playerX, playerY, playerWidth, playerHeight, '#3eff9e', true);
             
             // Skor
-            ctx.font = "bold 18px monospace";
+            ctx.font = "bold 18px 'Courier New'";
             ctx.fillStyle = "#0ff";
-            ctx.fillText("SCORE: " + score, 15, 35);
+            ctx.shadowBlur = 0;
+            ctx.fillText("🏆 " + score, 15, 35);
+            
+            // Peringatan kecepatan
+            if(baseSpeed > 7) {
+                ctx.font = "bold 12px monospace";
+                ctx.fillStyle = "#ff6666";
+                ctx.fillText("⚠️ HIGH SPEED ⚠️", canvas.width/2 - 55, 25);
+            }
         }
         
         // ============ INPUT ============
-        // Keyboard
+        let leftPressed = false;
+        let rightPressed = false;
+        
         window.addEventListener('keydown', (e) => {
             const key = e.key;
             if(key === 'ArrowLeft' || key === 'a' || key === 'A') leftPressed = true;
