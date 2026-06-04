@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>RACING FURY 3D - Inorya</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="game-header">
+            <h1>🏁 RACING FURY 3D 🏁</h1>
+            <div class="stats">
+                <div>SCORE: <span id="score">0</span></div>
+                <div>SPEED: <span id="speed">0</span> km/h</div>
+                <div>LAPS: <span id="laps">0</span>/3</div>
+            </div>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+        <div class="controls">
+            <button id="leftBtn">◀ KIRI</button>
+            <button id="rightBtn">KANAN ▶</button>
+            <button id="restartBtn">🔄 RESTART</button>
+        </div>
+        <div class="instructions">← → atau A D untuk pindah jalur | Hindari mobil merah!</div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
