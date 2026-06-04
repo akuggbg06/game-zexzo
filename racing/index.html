@@ -42,7 +42,8 @@
         button:active { transform: translateY(3px); }
         .key-hint { text-align: center; margin-top: 10px; font-size: 10px; color: #888; }
         .back-home { text-align: center; margin-top: 15px; }
-        .back-home a { color: cyan; text-decoration: none; font-size: 12px; }
+        .back-home a { color: cyan; text-decoration: none; font-size: 14px; background: #00000066; padding: 5px 15px; border-radius: 20px; display: inline-block; }
+        .back-home a:hover { background: cyan; color: black; }
     </style>
 </head>
 <body>
@@ -56,7 +57,7 @@
         </div>
         <div class="key-hint">⌨️ ← → atau A D | 📱 TEKAN TOMBOL</div>
         <div class="info">🚗 Hindari mobil lain! 🚗</div>
-        <div class="back-home"><a href="../index.html">← Kembali ke Arcade Hub</a></div>
+        <div class="back-home"><a href="../index.html">🏠 KEMBALI KE HOME</a></div>
     </div>
 </div>
 
@@ -77,15 +78,6 @@
         let leftPressed = false, rightPressed = false;
         
         const enemyColors = ['#e74c3c', '#3498db', '#9b59b6', '#e67e22', '#f1c40f', '#2ecc71', '#e91e63'];
-        
-        // Load data dari localStorage
-        function loadGame() {
-            const saved = localStorage.getItem('racing_highscore');
-            if(saved) {
-                document.getElementById('speedVal').innerText = saved;
-                // Tampilkan highscore di pojok nanti
-            }
-        }
         
         function saveHighScore(score) {
             let best = localStorage.getItem('racing_best') || 0;
@@ -204,7 +196,6 @@
         leftBtn.addEventListener('touchstart',(e)=>{e.preventDefault(); leftPressed=true;}); leftBtn.addEventListener('touchend',()=>{leftPressed=false;}); leftBtn.addEventListener('mousedown',()=>{leftPressed=true;}); leftBtn.addEventListener('mouseup',()=>{leftPressed=false;});
         rightBtn.addEventListener('touchstart',(e)=>{e.preventDefault(); rightPressed=true;}); rightBtn.addEventListener('touchend',()=>{rightPressed=false;}); rightBtn.addEventListener('mousedown',()=>{rightPressed=true;}); rightBtn.addEventListener('mouseup',()=>{rightPressed=false;});
         
-        loadGame();
         function gameLoop() { updateGame(); draw(); requestAnimationFrame(gameLoop); }
         gameLoop();
     })();
