@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Last Stand: Survival - Inorya</title>
+    <style>
+        * { user-select: none; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #0a0f1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            background: #1a2a2a;
+            cursor: crosshair;
+            box-shadow: 0 0 0 2px cyan;
+        }
+        .ui-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 8px 15px;
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+            z-index: 10;
+            pointer-events: none;
+            backdrop-filter: blur(4px);
+            border-left: 4px solid cyan;
+        }
+        .ui-panel div { margin: 4px 0; }
+        .ammo { color: #ffaa44; }
+        .health { color: #ff6666; }
+        .hunger { color: #88ff88; }
+        .thirst { color: #44aaff; }
+        .controls-info {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.5);
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 10px;
+            color: #ccc;
+            pointer-events: none;
+        }
+        .back-home {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.6);
+            padding: 6px 12px;
+            border-radius: 20px;
+            z-index: 10;
+        }
+        .back-home a { color: cyan; text-decoration: none; font-size: 12px; }
+        @media (max-width: 700px) {
+            .ui-panel { font-size: 10px; top: 5px; left: 5px; }
+            .controls-info { font-size: 8px; }
+        }
+    </style>
+</head>
+<body>
+<div>
+    <canvas id="gameCanvas" width="900" height="600"></canvas>
+    <div class="ui-panel">
+        <div>🔫 <span class="ammo" id="ammoVal">30</span> / 999</div>
+        <div>❤️ <span class="health" id="healthVal">100</span> %</div>
+        <div>🍗 <span class="hunger" id="hungerVal">80</span> %</div>
+        <div>💧 <span class="thirst" id="thirstVal">80</span> %</div>
+        <div>🏆 SCORE: <span id="scoreVal">0</span></div>
+    </div>
+    <div class="controls-info">
+        🎮 WASD gerak | 🖱️ Klik kiri tembak | 📦 Ambil makanan/minuman untuk isi ulang
+    </div>
+    <div class="back-home"><a href="../index.html">← Kembali ke Arcade Hub</a></div>
+</div>
+
+<script>
+    (function(){
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 900;
+        canvas.height = 600;
+        
+        // ---------- PLAYER ----------
+        let player = {
+            x: canvas.width/2,
+            y: canvas.height/2,
+            radius: 18,
+            health: 100,
+            hunger: 80,
+            thirst: 80,
+            ammo: 30,
+            score: 0,
+            alive: true
+        };
+        
+        // ---------- BULLETS ----------
+        let bullets = [];
+        let mouseX = canvas.width/2, mouseY = canvas.height/2;
+        let mouseDown = false;
+        
+        // ---------- ENEMIES ----------
+        let enemies = [];
+        let enemySpawnTimer = 0;
+        
+        // ---------- ITEMS (makanan/minuman) ----------
+        let items = [];
+        
+        // ---------- KEYBOARD ----------
+        const keys = { w: false, s: false, a: false, d: false };
+        
+        // ---------- LOAD / SAVE GAME ----------
+        function saveGame() {
+            const gameState = {
+                player: {
+                    x: player.x, y: player.y, health: player.health,
+                    hunger: player.hunger, thirst: player.thirst,
+                    ammo: player.ammo, score: player.score
+                },
+                bullets: bullets.map(b => ({x: b.x, y: b.y, dirX: b.dirX, dirY: b.dirY})),
+                enemies: enemies.map(e => ({x: e.x, y: e.y, radius: e.radius, hp: e.hp})),
+                items: items
+            };
+            localStorage.setItem('survival_save', JSON.stringify(gameState));
+        }
+        
+        function loadGame() {
+            const saved = localStorage.getItem('survival_save');
+            if(saved) {
+                try {
+                    const state = JSON.parse(saved);
+                    player = state.player;
+                    bullets = state.bullets;
+                    enemies = state.enemies;
+                    items = state.items;
+                    player.alive = true;
+                    updateUI();
+                } catch(e) { console.log("load error"); }
+            }
+        }
+        
+        function updateUI() {
+            document.getElementById('ammoVal').innerText = player.ammo;
+            document.getElementById('healthVal').innerText = Math.floor(player.health);
+            document.getElementById('hungerVal').innerText = Math.floor(player.hunger);
+            document.getElementById('thirstVal').innerText = Math.floor(player.thirst);
+            document.getElementById('scoreVal').innerText = player.score;
+        }
+        
+        // ---------- SPAWN ITEM (makanan/minuman) ----------
+        function spawnItem() {
+            const type = Math.random() < 0.5 ? 'food' : 'water';
+            items.push({
+                x: 30 + Math.random() * (canvas.width - 60),
+                y: 30 + Math.random() * (canvas.height - 60),
+                radius: 12,
+                type: type
+            });
+        }
+        
+        // ---------- SPAWN MUSUH ----------
+        function spawnEnemy() {
+            let side = Math.floor(Math.random() * 4);
+            let x, y;
+            if(side === 0) { x = Math.random() * canvas.width; y = -20; }
+            else if(side === 2) { x = Math.random() * canvas.width; y = canvas.height + 20; }
+            else if(side === 1) { x = canvas.width + 20; y = Math.random() * canvas.height; }
+            else { x = -20; y = Math.random() * canvas.height; }
+            enemies.push({
+                x: x, y: y, radius: 16, hp: 35,
+                speed: 0.8 + Math.random() * 0.7
+            });
+        }
+        
+        // ---------- UPDATE GAME ----------
+        function updateGame() {
+            if(!player.alive) return;
+            
+            // ---- Stat menurun seiring waktu ----
+            player.hunger -= 0.008;
+            player.thirst -= 0.01;
+            if(player.hunger <= 0) player.health -= 0.2;
+            if(player.thirst <= 0) player.health -= 0.25;
+            if(player.hunger > 100) player.hunger = 100;
+            if(player.thirst > 100) player.thirst = 100;
+            if(player.health <= 0) { player.alive = false; alert("☠️ KAMU MATI! ☠️\nSkor akhir: "+player.score+"\nGame akan di-restart."); resetGame(); return; }
+            
+            // ---- Gerak Player WASD ----
+            let moveX = 0, moveY = 0;
+            if(keys.d) moveX = 1;
+            if(keys.a) moveX = -1;
+            if(keys.s) moveY = 1;
+            if(keys.w) moveY = -1;
+            let len = Math.hypot(moveX, moveY);
+            if(len > 0) { moveX /= len; moveY /= len; }
+            player.x += moveX * 3.2;
+            player.y += moveY * 3.2;
+            player.x = Math.min(Math.max(player.x, 20), canvas.width-20);
+            player.y = Math.min(Math.max(player.y, 20), canvas.height-20);
+            
+            // ---- Tembak ----
+            if(mouseDown && player.ammo > 0) {
+                let angle = Math.atan2(mouseY - player.y, mouseX - player.x);
+                let speed = 9;
+                bullets.push({
+                    x: player.x, y: player.y,
+                    dirX: Math.cos(angle), dirY: Math.sin(angle),
+                    life: true, radius: 4
+                });
+                player.ammo--;
+                updateUI();
+                mouseDown = false; // biar ga nembak spam banget, tapi bisa klik berkali2
+            }
+            
+            // ---- Update Peluru ----
+            for(let i=0; i<bullets.length; i++) {
+                bullets[i].x += bullets[i].dirX * 9;
+                bullets[i].y += bullets[i].dirY * 9;
+                if(bullets[i].x < -50 || bullets[i].x > canvas.width+50 || bullets[i].y < -50 || bullets[i].y > canvas.height+50) {
+                    bullets.splice(i,1); i--; continue;
+                }
+                // Collision dengan musuh
+                let hit = false;
+                for(let j=0; j<enemies.length; j++) {
+                    const e = enemies[j];
+                    const dx = bullets[i].x - e.x, dy = bullets[i].y - e.y;
+                    if(Math.hypot(dx,dy) < e.radius + 5) {
+                        e.hp -= 28;
+                        bullets.splice(i,1);
+                        hit = true;
+                        if(e.hp <= 0) {
+                            enemies.splice(j,1);
+                            player.score += 10;
+                            updateUI();
+                            // chance drop item
+                            if(Math.random() < 0.25) spawnItem();
+                        }
+                        break;
+                    }
+                }
+                if(hit) { i--; }
+            }
+            
+            // ---- Update Musuh (mendekati player) ----
+            for(let i=0; i<enemies.length; i++) {
+                const e = enemies[i];
+                const dx = player.x - e.x, dy = player.y - e.y;
+                const dist = Math.hypot(dx,dy);
+                if(dist > 0.01) {
+                    e.x += (dx / dist) * e.speed;
+                    e.y += (dy / dist) * e.speed;
+                }
+                // Collision dengan player
+                if(Math.hypot(player.x - e.x, player.y - e.y) < player.radius + e.radius) {
+                    player.health -= 12;
+                    enemies.splice(i,1);
+                    updateUI();
+                    if(player.health <= 0) { player.alive = false; alert("KAMU MATI!"); resetGame(); return; }
+                    i--;
+                }
+            }
+            
+            // ---- Spawn musuh periodik ----
+            enemySpawnTimer++;
+            if(enemySpawnTimer > 40 && enemies.length < 12) {
+                spawnEnemy();
+                enemySpawnTimer = 0;
+            }
+            
+            // ---- Update Items (collect) ----
+            for(let i=0; i<items.length; i++) {
+                const it = items[i];
+                if(Math.hypot(player.x - it.x, player.y - it.y) < player.radius + it.radius) {
+                    if(it.type === 'food') {
+                        player.hunger = Math.min(player.hunger + 35, 100);
+                        player.health = Math.min(player.health + 10, 100);
+                    } else if(it.type === 'water') {
+                        player.thirst = Math.min(player.thirst + 40, 100);
+                        player.health = Math.min(player.health + 8, 100);
+                    }
+                    items.splice(i,1);
+                    updateUI();
+                    i--;
+                }
+            }
+            
+            // otomatis spawn item random jika kurang
+            if(items.length < 3 && Math.random() < 0.02) spawnItem();
+            
+            // Auto simpan setiap 1 detik (kira2)
+            if(Math.random() < 0.02) saveGame();
+            updateUI();
+        }
+        
+        function resetGame() {
+            player = {
+                x: canvas.width/2, y: canvas.height/2, radius: 18,
+                health: 100, hunger: 80, thirst: 80, ammo: 30, score: 0, alive: true
+            };
+            bullets = [];
+            enemies = [];
+            items = [];
+            for(let i=0;i<2;i++) spawnEnemy();
+            for(let i=0;i<2;i++) spawnItem();
+            updateUI();
+            saveGame();
+        }
+        
+        // ---------- DRAW ----------
+        function draw() {
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            // Ground texture
+            ctx.fillStyle = '#1f3a2f';
+            ctx.fillRect(0,0,canvas.width,canvas.height);
+            // Grid
+            ctx.strokeStyle = '#2a5a4a';
+            ctx.lineWidth = 0.5;
+            for(let i=0;i<canvas.width+50;i+=50) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); ctx.stroke(); }
+            for(let i=0;i<canvas.height+50;i+=50) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(canvas.width,i); ctx.stroke(); }
+            
+            // Items
+            for(let it of items) {
+                ctx.fillStyle = it.type === 'food' ? '#dd8844' : '#44aaff';
+                ctx.shadowBlur = 5;
+                ctx.beginPath(); ctx.arc(it.x, it.y, it.radius-2, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.font = "14px monospace";
+                ctx.fillText(it.type === 'food' ? '🍗' : '💧', it.x-8, it.y+6);
+            }
+            // Enemies
+            for(let e of enemies) {
+                ctx.fillStyle = '#cc3333';
+                ctx.shadowColor = 'darkred';
+                ctx.beginPath(); ctx.arc(e.x, e.y, e.radius, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = 'black';
+                ctx.font = "bold 12px monospace";
+                ctx.fillText("💀", e.x-8, e.y-8);
+                // health bar
+                ctx.fillStyle = '#ff6666';
+                ctx.fillRect(e.x-15, e.y-18, 30, 5);
+                ctx.fillStyle = '#00ff00';
+                ctx.fillRect(e.x-15, e.y-18, 30 * (e.hp/35), 5);
+            }
+            // Bullets
+            for(let b of bullets) {
+                ctx.fillStyle = 'yellow';
+                ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, Math.PI*2); ctx.fill();
+            }
+            // Player
+            ctx.fillStyle = '#88ff88';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#0f0';
+            ctx.beginPath(); ctx.arc(player.x, player.y, player.radius, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#224466';
+            ctx.beginPath(); ctx.arc(player.x-5, player.y-4, 5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(player.x+5, player.y-4, 5, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = 'white';
+            ctx.beginPath(); ctx.arc(player.x-4, player.y-5, 2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(player.x+6, player.y-5, 2, 0, Math.PI*2); ctx.fill();
+            // arah mouse
+            ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(mouseX, mouseY); ctx.strokeStyle = 'cyan'; ctx.lineWidth = 1; ctx.stroke();
+            ctx.fillStyle = 'white';
+            ctx.font = "bold 14px monospace";
+            ctx.fillText("🔫", player.x+12, player.y-12);
+            
+            if(!player.alive) {
+                ctx.font = "30px monospace"; ctx.fillStyle = "red"; ctx.shadowBlur=0;
+                ctx.fillText("GAME OVER", canvas.width/2-100, canvas.height/2);
+            }
+            ctx.shadowBlur = 0;
+        }
+        
+        // ---------- EVENT LISTENERS ----------
+        window.addEventListener('keydown', (e) => { let k=e.key; if(k==='w'||k==='W') keys.w=true; if(k==='s'||k==='S') keys.s=true; if(k==='a'||k==='A') keys.a=true; if(k==='d'||k==='D') keys.d=true; e.preventDefault(); });
+        window.addEventListener('keyup', (e) => { let k=e.key; if(k==='w'||k==='W') keys.w=false; if(k==='s'||k==='S') keys.s=false; if(k==='a'||k==='A') keys.a=false; if(k==='d'||k==='D') keys.d=false; });
+        canvas.addEventListener('mousemove', (e) => { const rect = canvas.getBoundingClientRect(); mouseX = e.clientX - rect.left; mouseY = e.clientY - rect.top; });
+        canvas.addEventListener('mousedown', (e) => { if(e.button === 0) { mouseDown = true; e.preventDefault(); } });
+        canvas.addEventListener('mouseup', () => { mouseDown = false; });
+        // Touch support HP
+        canvas.addEventListener('touchmove', (e) => { const rect = canvas.getBoundingClientRect(); mouseX = e.touches[0].clientX - rect.left; mouseY = e.touches[0].clientY - rect.top; e.preventDefault(); });
+        canvas.addEventListener('touchstart', (e) => { mouseDown = true; e.preventDefault(); });
+        canvas.addEventListener('touchend', () => { mouseDown = false; });
+        
+        // Load data & start
+        loadGame();
+        if(enemies.length===0) for(let i=0;i<2;i++) spawnEnemy();
+        if(items.length===0) for(let i=0;i<2;i++) spawnItem();
+        updateUI();
+        
+        function gameLoop() { updateGame(); draw(); requestAnimationFrame(gameLoop); }
+        gameLoop();
+    })();
+</script>
+</body>
+</html>
